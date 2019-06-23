@@ -12,11 +12,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils import resample
 from sklearn import preprocessing
 
-def hasNumbers(inputString):
+def hasNumbers(inputString): # check if string has a number within it
     return any(char.isdigit() for char in inputString)
 
 
-def prepare_data(df):
+def prepare_data(df): #remove quotations and dots
     for x in range(len(df)):
         for y in range(22):
             if type(df[x][y]) is str:
@@ -24,16 +24,16 @@ def prepare_data(df):
                 df[x][y] = df[x][y].replace('.', "")
 
 
-    for x in range(len(df)):
+    for x in range(len(df)): #typecast a number in string format to float
         for y in range(22):
             if type(df[x][y]) is str and hasNumbers(df[x][y]):
                 df[x][y] = float(df[x][y])
     df = pd.DataFrame(df)
-    df.dropna(inplace=True, subset=[21])
-    df = df.drop([19],1)
+    df.dropna(inplace=True, subset=[21]) #remove instances were label is empty
+    df = df.drop([19],1) # remove feature with a high frequency of NaN occurences
     df = df.to_numpy()
 
-    for x in range(len(df)):
+    for x in range(len(df)):#update 'yes' to 1 and 'no' to 0
         for y in range(20,21):
             if df[x][y] == 'yes':
                 df[x][y] = 1
@@ -44,31 +44,33 @@ def prepare_data(df):
     return df
 
 
-pp = pprint.PrettyPrinter(indent=4)
 training_df = pd.read_csv('training_new.csv')
 validation_df = pd.read_csv('validation_new.csv')
 training_df = training_df.to_numpy()
 validation_df = validation_df.to_numpy()
-df1 = prepare_data(training_df)
+df1 = prepare_data(training_df) #function to prepare dataset
 df2 = prepare_data(validation_df)
-df = pd.concat([df1,df2], axis = 0)
+df = pd.concat([df1,df2], axis = 0) #merge datasets vertically
 
 
-df = pd.get_dummies(df, columns=[0,5,6,7,8,11,12,14,15])
-df.fillna(df.mean(), inplace= True)
+df = pd.get_dummies(df, columns=[0,5,6,7,8,11,12,14,15]) #one hot encoding for categorical features
+df.fillna(df.mean(), inplace= True) #fill gaps in dataset using mean
 label = df[20]
-training_label = label[:df1.shape[0]]
+### separate dataset label ###
+training_label = label[:df1.shape[0]] 
 validation_label = label[df1.shape[0]+1:]
 features = df.drop([20],1)
+### normalization ###
 min_max_scaler = preprocessing.MinMaxScaler()
 features = min_max_scaler.fit_transform(features)
 features = pd.DataFrame(features)
+### separate dataset features ###
 training_features = features[:df1.shape[0]]
 validation_features = features[df1.shape[0]+1:]
 
 #clf = MultinomialNB()
 #clf = LogisticRegression(random_state=0, solver='lbfgs')
-clf = MLPClassifier(solver='sgd', alpha=1e-5,hidden_layer_sizes=(10,10), random_state=1, max_iter = 200)
+clf = MLPClassifier(solver='sgd', alpha=1e-5,hidden_layer_sizes=(10,10), random_state=1, max_iter = 200)# model used
 #clf = SVC(gamma='auto')
 #clf = tree.DecisionTreeClassifier()
 clf.fit(training_features, training_label)
